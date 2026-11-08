@@ -11,8 +11,18 @@ const tB = randomUUID();
 
 beforeAll(async () => {
   db = await startTestDb();
-  await withTenant(db.appPool, tA, (c) => c.query("INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'HCM-01', 'Kho A')", [tA]));
-  await withTenant(db.appPool, tB, (c) => c.query("INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'HN-01', 'Kho B')", [tB]));
+  await withTenant(db.appPool, tA, (c) =>
+    c.query(
+      "INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'HCM-01', 'Kho A')",
+      [tA],
+    ),
+  );
+  await withTenant(db.appPool, tB, (c) =>
+    c.query(
+      "INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'HN-01', 'Kho B')",
+      [tB],
+    ),
+  );
 });
 
 afterAll(async () => {
@@ -21,7 +31,14 @@ afterAll(async () => {
 
 describe('Row-Level Security', () => {
   it('SELECT * không điều kiện chỉ thấy dữ liệu của tenant hiện tại', async () => {
-    const rows = await withTenant(db.appPool, tA, async (c) => (await c.query('SELECT code FROM warehouse.warehouses')) as { rows: Array<{ code: string }> });
+    const rows = await withTenant(
+      db.appPool,
+      tA,
+      async (c) =>
+        (await c.query('SELECT code FROM warehouse.warehouses')) as {
+          rows: Array<{ code: string }>;
+        },
+    );
     expect(rows.rows.map((r) => r.code)).toEqual(['HCM-01']);
   });
 
@@ -32,11 +49,18 @@ describe('Row-Level Security', () => {
 
   it('không ghi được dữ liệu mang tenant_id khác (WITH CHECK)', async () => {
     await expect(
-      withTenant(db.appPool, tA, (c) => c.query("INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'X-01', 'Lậu')", [tB])),
+      withTenant(db.appPool, tA, (c) =>
+        c.query(
+          "INSERT INTO warehouse.warehouses (tenant_id, code, name) VALUES ($1, 'X-01', 'Lậu')",
+          [tB],
+        ),
+      ),
     ).rejects.toThrow(/row-level security/);
   });
 
   it('role ứng dụng không sửa/xóa được lịch sử tồn kho', async () => {
-    await expect(withTenant(db.appPool, tA, (c) => c.query('DELETE FROM warehouse.stock_movements'))).rejects.toThrow(/permission denied/);
+    await expect(
+      withTenant(db.appPool, tA, (c) => c.query('DELETE FROM warehouse.stock_movements')),
+    ).rejects.toThrow(/permission denied/);
   });
 });

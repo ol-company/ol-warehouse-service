@@ -20,8 +20,13 @@ export class WarehouseService {
     });
   }
 
-  createWarehouse(tenantId: string, input: { code: string; name: string; address?: string | null }) {
-    return this.uow.run(tenantId, (r) => r.warehouses.create({ code: input.code, name: input.name, address: input.address ?? null }));
+  createWarehouse(
+    tenantId: string,
+    input: { code: string; name: string; address?: string | null },
+  ) {
+    return this.uow.run(tenantId, (r) =>
+      r.warehouses.create({ code: input.code, name: input.name, address: input.address ?? null }),
+    );
   }
 
   listItems(tenantId: string, warehouseId: string) {
@@ -31,16 +36,26 @@ export class WarehouseService {
     });
   }
 
-  createItem(tenantId: string, warehouseId: string, input: { sku: string; name: string; uom?: string }) {
+  createItem(
+    tenantId: string,
+    warehouseId: string,
+    input: { sku: string; name: string; uom?: string },
+  ) {
     return this.uow.run(tenantId, async (r) => {
       if (!(await r.warehouses.get(warehouseId))) throw new NotFoundError('Không tìm thấy kho');
-      return r.items.create({ warehouseId, sku: input.sku, name: input.name, uom: input.uom ?? 'EA' });
+      return r.items.create({
+        warehouseId,
+        sku: input.sku,
+        name: input.name,
+        uom: input.uom ?? 'EA',
+      });
     });
   }
 
   listMovements(tenantId: string, warehouseId: string, itemId: string, limit: number) {
     return this.uow.run(tenantId, async (r) => {
-      if (!(await r.items.get(warehouseId, itemId))) throw new NotFoundError('Không tìm thấy mặt hàng');
+      if (!(await r.items.get(warehouseId, itemId)))
+        throw new NotFoundError('Không tìm thấy mặt hàng');
       return r.movements.list(itemId, limit);
     });
   }
@@ -57,10 +72,17 @@ export class WarehouseService {
     return this.uow.run(tenantId, async (r) => {
       const item = await r.items.get(warehouseId, itemId);
       if (!item) throw new NotFoundError('Không tìm thấy mặt hàng');
-      const movement = await r.movements.insert({ itemId, delta: input.delta, reason: input.reason, idempotencyKey: input.idempotencyKey, actor: input.actor });
+      const movement = await r.movements.insert({
+        itemId,
+        delta: input.delta,
+        reason: input.reason,
+        idempotencyKey: input.idempotencyKey,
+        actor: input.actor,
+      });
       if (!movement) {
         const previous = await r.movements.findByKey(input.idempotencyKey);
-        if (previous?.itemId !== itemId) throw new ConflictError('Idempotency-Key đã dùng cho thao tác khác');
+        if (previous?.itemId !== itemId)
+          throw new ConflictError('Idempotency-Key đã dùng cho thao tác khác');
         return { item, movement: previous, replayed: true };
       }
       const updated = await r.items.applyDelta(warehouseId, itemId, input.delta);

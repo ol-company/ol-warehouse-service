@@ -18,7 +18,13 @@ export interface ItemRepository {
 
 export interface MovementRepository {
   // Trả null nếu idempotencyKey đã dùng (yêu cầu lặp lại)
-  insert(input: { itemId: string; delta: string; reason: string; idempotencyKey: string; actor: string }): Promise<StockMovement | null>;
+  insert(input: {
+    itemId: string;
+    delta: string;
+    reason: string;
+    idempotencyKey: string;
+    actor: string;
+  }): Promise<StockMovement | null>;
   findByKey(idempotencyKey: string): Promise<StockMovement | null>;
   list(itemId: string, limit: number): Promise<StockMovement[]>;
 }

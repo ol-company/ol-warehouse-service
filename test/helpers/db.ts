@@ -11,7 +11,9 @@ export interface TestDb {
 }
 
 export async function startTestDb(): Promise<TestDb> {
-  const container = await new PostgreSqlContainer('postgres:17-alpine').withDatabase('warehouse').start();
+  const container = await new PostgreSqlContainer('postgres:17-alpine')
+    .withDatabase('warehouse')
+    .start();
   const admin = new pg.Client({ connectionString: container.getConnectionUri() });
   await admin.connect();
   await admin.query(`
@@ -27,7 +29,12 @@ export async function startTestDb(): Promise<TestDb> {
   await admin.end();
 
   const base = { host: container.getHost(), port: container.getPort(), database: 'warehouse' };
-  const migrator = new pg.Pool({ ...base, user: 'warehouse_migrator', password: 'migrator', max: 1 });
+  const migrator = new pg.Pool({
+    ...base,
+    user: 'warehouse_migrator',
+    password: 'migrator',
+    max: 1,
+  });
   await runMigrations(migrator, fileURLToPath(new URL('../../migrations', import.meta.url)));
   await migrator.end();
 
