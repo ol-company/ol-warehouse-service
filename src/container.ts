@@ -1,5 +1,13 @@
 // Composition root của Warehouse service.
-import { asClass, asFunction, asValue, createContainer, InjectionMode, type AwilixContainer, type Resolver } from 'awilix';
+import {
+  asClass,
+  asFunction,
+  asValue,
+  createContainer,
+  InjectionMode,
+  type AwilixContainer,
+  type Resolver,
+} from 'awilix';
 import {
   CachingAuthorizer,
   ClientCredentialsTokenProvider,
@@ -43,7 +51,14 @@ export function buildContainer(
     pool: asValue(pool),
     uow: asValue(new RlsUnitOfWork(pool)),
     tokenVerifier: asValue(
-      new JoseTokenVerifier({ issuer: [config.OIDC_ISSUER, ...(config.OIDC_INTERNAL_ISSUER ? [config.OIDC_INTERNAL_ISSUER] : [])], audience: config.OIDC_AUDIENCE, jwksUri: `${realmUrl}/protocol/openid-connect/certs` }),
+      new JoseTokenVerifier({
+        issuer: [
+          config.OIDC_ISSUER,
+          ...(config.OIDC_INTERNAL_ISSUER ? [config.OIDC_INTERNAL_ISSUER] : []),
+        ],
+        audience: config.OIDC_AUDIENCE,
+        jwksUri: `${realmUrl}/protocol/openid-connect/certs`,
+      }),
     ),
     // Hỏi IAM qua HTTP (danh tính service = client credentials) + cache; IAM lỗi → fail closed
     authorizer: asFunction(
